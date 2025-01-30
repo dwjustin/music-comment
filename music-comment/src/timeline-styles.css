@@ -1,0 +1,15 @@
+/* Timeline styling */
+::part(timeline) {
+    font-size: 13px;
+    height: 40px !important;
+    color: #ffffff;
+    font-weight: bold;
+    margin-bottom: 8px;
+    position: relative !important;
+  }
+    
+  ::part(timeline-notch) {
+    opacity: 1;
+    border-left-color: #ffffff;
+    position: absolute;
+  }

@@ -1,0 +1,65 @@
+/* Example: put the checkerboard on the wave canvas: */
+::part(canvases) {
+  padding-bottom: 16px;
+  margin: 8px 0; 
+  box-sizing: border-box;
+}
+
+::part(progress) {
+  padding-top: 48px;
+  padding-bottom: 16px; 
+  box-sizing: border-box;
+  height: 100%;
+}
+
+
+::part(cursor) {
+  top: 60px; 
+  border-radius: 4px; 
+  position: absolute;
+  background-color: red;
+  height: 410px;
+}
+
+  
+::part(cursor)::after {
+  z-index: 200;
+  content: '🦖'; /* Add emoji content */
+  font-size: 2em; /* Adjust the size of the content */
+  position: absolute; /* Position the content absolutely within the cursor */
+  top: -20px; /* Position above the cursor (adjust this value as needed) */
+  transform: translateX(-50%); 
+  /* padding: 100px; */
+}
+
+::part(region) {
+  top: 40px;
+  opacity: 10;
+  z-index: 400;
+ } 
+
+/*   
+  #waveform::part(region) {
+    background-color: rgba(0, 0, 100, 0.25) !important;
+  }
+  
+  #waveform::part(region-green) {
+    background-color: rgba(0, 100, 0, 0.25) !important;
+    font-size: 12px;
+    text-shadow: 0 0 2px #fff;
+  }
+  
+  #waveform::part(marker) {
+    background-color: rgba(0, 0, 100, 0.25) !important;
+    border: 1px solid #fff;
+    padding: 1px;
+    text-indent: 10px;
+    font-family: fantasy;
+    text-decoration: underline;
+  }
+  
+  #waveform::part(region-handle-right) {
+    border-right-width: 4px !important;
+    border-right-color: #fff000 !important;
+  } */
+  
