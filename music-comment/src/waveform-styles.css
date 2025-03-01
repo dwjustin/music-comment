@@ -3,6 +3,8 @@
   padding-bottom: 16px;
   margin: 8px 0; 
   box-sizing: border-box;
+  background-color: #fff7fe;
+  
 }
 
 ::part(progress) {
@@ -10,6 +12,7 @@
   padding-bottom: 16px; 
   box-sizing: border-box;
   height: 100%;
+  background-color: #fff7fe;
 }
 
 
@@ -17,7 +20,7 @@
   top: 60px; 
   border-radius: 4px; 
   position: absolute;
-  background-color: red;
+  background-color: rgba(105, 84, 150);
   height: 410px;
 }
 
@@ -37,6 +40,23 @@
   opacity: 10;
   z-index: 400;
  } 
+
+/* Circle in the center of the region */
+::part(region)::after {
+  pointer-events: none;
+  /* content: "";
+  position: absolute;
+  top: 50%;   
+  left: 50%;  
+  transform: translate(-50%, -50%);
+  width: 16px;  
+  height: 16px; 
+  background-color: rgba(255, 0, 0, 0.9);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 999; */
+}
+
 
 /*   
   #waveform::part(region) {

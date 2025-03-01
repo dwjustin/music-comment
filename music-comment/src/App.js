@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import WaveSurfer from 'wavesurfer.js';
 import TimelinePlugin from 'wavesurfer.js/dist/plugins/timeline.esm.js';
 import RegionsPlugin from 'wavesurfer.js/dist/plugins/regions.esm.js';
-import { Drawer, List, ListItem, Button, colors } from '@mui/material';
+import Hover from 'wavesurfer.js/dist/plugins/hover.esm.js'
 import ReplayIcon from '@mui/icons-material/Replay';
 import PlayArrow from '@mui/icons-material/PlayArrow';
 import Pause from '@mui/icons-material/Pause';
@@ -11,6 +11,7 @@ import './timeline-styles.css';
 import { SkipNext } from '@mui/icons-material';
 import SkipPrevious from '@mui/icons-material/SkipPrevious';
 import ArrowForward from '@mui/icons-material/ArrowForward';
+import HoverPlugin from 'wavesurfer.js/dist/plugins/hover.esm.js';
 
 const AUDIO_URL = 'audio/type_beat.wav';
 const MIN_ZOOM = 0;
@@ -24,21 +25,25 @@ const WaveformWithTimeline = () => {
   const [isReady, setIsReady] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentZoom, setCurrentZoom] = useState(MIN_ZOOM);
-  const [drawerOpen, setDrawerOpen] = useState(false);
   const [currentRegion, setCurrentRegion] = useState(null);
-  const [isHoveredRegionId, setIsHoveredRegionId] = useState(null);
-  const [regions, setRegions] = useState([]);
-  const [hoveredRegion, setHoveredRegion] = useState(null);
+  const [showTimestamp, setShowTimestamp] = useState(false);
 
-  const toggleDrawer = () => {
-    setDrawerOpen(!drawerOpen);
-  };
 
-  const region = RegionsPlugin.create();
+
+  const region = RegionsPlugin.create({
+    lineColor: '#ff0000',
+    lineWidth: 2,
+    labelBackground: '#555',
+    labelColor: '#fff',
+    labelSize: '11px',
+  });
+  const hover = HoverPlugin.create();
 
   const random = (min, max) => Math.random() * (max - min) + min;
-  const randomColor = () => `rgba(${random(0, 255)}, ${random(0, 255)}, ${random(0, 255)}, 0.5)`;
-
+  // const randomColor = () => `rgba(${random(0, 255)}, ${random(0, 255)}, ${random(0, 255)}, 0.5)`;
+  const randomColor = () => 'rgba(229, 194, 192, 0.5)'; // Blue color
+  // 리전 지정시 색: rgba(229, 194, 66, 0.5)
+  // 리전 댓글 고정색: rgba(156, 143, 184, 0.5)
   function formatTimeCallback(seconds, pxPerSec) {
     seconds = Number(seconds);
     var minutes = Math.floor(seconds / 60);
@@ -61,31 +66,6 @@ const WaveformWithTimeline = () => {
     return secondsStr;
   }
 
-  function timeInterval(pxPerSec) {
-    if (pxPerSec <= 0) {
-      return 1; // fallback instead of dividing by zero
-    }
-
-    let retval = 1;
-    if (pxPerSec >= 25 * 100) {
-      retval = 0.01;
-    } else if (pxPerSec >= 25 * 40) {
-      retval = 0.025;
-    } else if (pxPerSec >= 25 * 10) {
-      retval = 0.1;
-    } else if (pxPerSec >= 25 * 4) {
-      retval = 0.25;
-    } else if (pxPerSec >= 25) {
-      retval = 1;
-    } else if (pxPerSec * 5 >= 25) {
-      retval = 5;
-    } else if (pxPerSec * 15 >= 25) {
-      retval = 15;
-    } else {
-      retval = Math.ceil(0.5 / pxPerSec) * 60;
-    }
-    return retval;
-  }
 
   function primaryLabelInterval(pxPerSec) {
     var retval = 1;
@@ -109,15 +89,11 @@ const WaveformWithTimeline = () => {
     return retval;
   }
 
-  function secondaryLabelInterval(pxPerSec) {
-    return Math.floor(10 / timeInterval(pxPerSec));
-  }
-
   useEffect(() => {
     wavesurfer.current = WaveSurfer.create({
       container: waveformRef.current,
-      waveColor: '#FF69B4',
-      progressColor: '#F7CAC9',
+      waveColor: '#BFB7D0',
+      progressColor: '#8271A6',
       cursorColor: 'red',
       cursorWidth: 3,
       backend: 'MediaElement',
@@ -138,11 +114,12 @@ const WaveformWithTimeline = () => {
             color: '#FFFFFF',
             fontWeight: 900,
             fontSize: '12px',
-            backgroundColor: 'grey',
+            backgroundColor: '#43297B',
             opacity: 1,
           },
         }),
         region,
+        hover,
       ],
     });
 
@@ -156,28 +133,84 @@ const WaveformWithTimeline = () => {
 
       region.on('region-clicked', (region, e) => {
         e.stopPropagation();
-        console.log('region clicked', region.start);
+        console.log('region clicked', region.id);
         region.play(region.start, region.end);
         setIsPlaying(true);
       });
 
-      region.on('region-created', (region) => {
-        console.log('Region created:', region);
-
-        region.on('over', () => {
-          setHoveredRegion(region);
+      region.on('region-created', (newRegion) => {
+        console.log('Region created:', newRegion.id);
+        
+          // If there's an existing region, remove it
+        if (currentRegion) {
+          currentRegion.remove();
+          setCurrentRegion(null);
+        }
+        
+        setCurrentRegion(newRegion);
+      
+        // 1. Make sure the region container is relatively positioned
+        //    so absolutely positioned children can be placed correctly
+        newRegion.element.style.position = 'absolute';
+      
+        // 2. Create a container <div> to hold the two buttons side-by-side
+        const buttonContainer = document.createElement('div');
+        buttonContainer.style.position = 'absolute';
+        buttonContainer.style.top = '50%';
+        buttonContainer.style.left = '50%';
+        buttonContainer.style.transform = 'translate(-50%, -50%)';
+        buttonContainer.style.display = 'flex';
+        buttonContainer.style.flexDirection = 'row'; 
+        buttonContainer.style.gap = '12px';           // increased space between buttons
+        buttonContainer.style.alignItems = 'center';
+      
+        // 3. Create the "Comment" button
+        const commentButton = document.createElement('button');
+        commentButton.innerText = 'Comment';
+        commentButton.style.borderRadius = '6px';     // slightly larger radius
+        commentButton.style.border = 'none';
+        commentButton.style.padding = '8px 16px';     // increased padding
+        commentButton.style.cursor = 'pointer';
+        commentButton.style.fontSize = '14px';        // larger text
+        // Stop clicks from also triggering the region click event
+        commentButton.addEventListener('click', (e) => {
+          e.stopPropagation();
+          console.log('Comment button clicked for region:', newRegion.id);
+          // Add your custom comment logic here...
         });
-
-        region.on('out', () => {
-          setHoveredRegion(null);
+      
+        // 4. Create the "Remove" button
+        const removeButton = document.createElement('button');
+        removeButton.innerText = 'Remove';
+        removeButton.style.borderRadius = '6px';      // slightly larger radius
+        removeButton.style.border = 'none';
+        removeButton.style.padding = '8px 16px';      // increased padding
+        removeButton.style.cursor = 'pointer';
+        removeButton.style.fontSize = '14px';         // larger text
+        removeButton.style.backgroundColor = 'red';
+        removeButton.style.color = 'white';
+        removeButton.addEventListener('click', (e) => {
+          e.stopPropagation(); // Prevent region click event
+          console.log('Remove button clicked for region:', newRegion.id);
+          newRegion.remove();  // This removes the region from WaveSurfer
+          setCurrentRegion(null); // Clear current region
         });
+      
+        // 5. Append both buttons into the container
+        buttonContainer.appendChild(commentButton);
+        buttonContainer.appendChild(removeButton);
+      
+        // 6. Finally, append the container into the region's DOM element
+        newRegion.element.appendChild(buttonContainer);
       });
+      
     });
 
     wavesurfer.current.on('finish', () => setIsPlaying(false));
 
     wavesurfer.current.on('region-updated', (region) => {
       console.log('Updated region', region);
+      setCurrentRegion(region);
     });
 
     return () => {
@@ -217,7 +250,7 @@ const WaveformWithTimeline = () => {
   return (
     <div className="mx-auto space-y-6 flex bg-white">
       <div className="flex-1 p-8" style={{ width: `calc(100% - ${DRAWER_WIDTH}px)` }}>
-        <div className="border rounded-lg p-8 bg-black shadow-sm">
+        <div className="border rounded-lg p-8 shadow-sm">
           <div ref={waveformRef} id="waveform" />
         </div>
 
@@ -232,7 +265,7 @@ const WaveformWithTimeline = () => {
             onClick={handlePlayPause}
             disabled={!isReady}
             className={`px-4 py-2 text-white rounded transition-colors 
-              ${isReady ? 'bg-blue-500 hover:bg-blue-600' : 'bg-blue-300 cursor-not-allowed'}
+              ${isReady ? 'bg-[#43297B] hover:bg-[#BFB7D0]' : 'bg-[#BFB7D0] cursor-not-allowed'}
               `}
           >
             {isPlaying ? <Pause /> : <PlayArrow />}
@@ -244,12 +277,13 @@ const WaveformWithTimeline = () => {
             <span>Zoom:</span>
             <input
               type="range"
+              style={{ backgroundColor: '#43297B' }}
               onChange={handleZoom}
               min={MIN_ZOOM}
               max={MAX_ZOOM}
               value={currentZoom}
               disabled={!isReady}
-              className={`w-32 ${!isReady ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`w-32 ${!isReady ? 'opacity-50 bg-[#43297B] cursor-not-allowed' : ''}`}
             />
           </div>
         </div>
@@ -261,6 +295,21 @@ const WaveformWithTimeline = () => {
               <ArrowForward />
             </button>
           </div>
+          
+        </div>
+        <div className="flex items-center space-x-2">
+          <input 
+            type="checkbox" 
+            id="myCheckbox"
+            onChange={(e) => setShowTimestamp(e.target.checked)} 
+          />
+          <label htmlFor="myCheckbox">타임 스탬프 추가</label>
+          {showTimestamp && currentRegion && (
+            <div className="ml-4">
+              <span className="mr-2">Start: {currentRegion.start}s</span>
+              <span>End: {currentRegion.end}s</span>
+            </div>
+          )}
         </div>
       </div>
 

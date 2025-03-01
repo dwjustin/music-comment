@@ -2,14 +2,15 @@
 ::part(timeline) {
     font-size: 13px;
     height: 40px !important;
-    color: #ffffff;
+    color: white;
     font-weight: bold;
     margin-bottom: 8px;
+    z-index: 100;
     position: relative !important;
   }
     
   ::part(timeline-notch) {
     opacity: 1;
-    border-left-color: #ffffff;
+    border-left-color: white;
     position: absolute;
   }
